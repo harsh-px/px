@@ -17,7 +17,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	api "github.com/libopenstorage/openstorage-sdk-clients/sdk/golang"
 	"github.com/portworx/px/pkg/util"
@@ -65,9 +64,13 @@ func init() {
 }
 
 func createVolumeExec(cmd *cobra.Command, args []string) error {
-	ctx, conn, err := pxConnect()
+	ctx, conn, err := util.PxConnect()
+	if err != nil {
+		return err
+	}
 	defer conn.Close()
 
+	// Get labels
 	if len(cvOpts.labelsAsString) != 0 {
 		var err error
 		cvOpts.req.Labels, err = commaKVStringToMap(cvOpts.labelsAsString)

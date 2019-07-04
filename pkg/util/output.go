@@ -17,8 +17,13 @@ limitations under the License.
 package util
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"text/tabwriter"
+
+	"github.com/cheynewallace/tabby"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -38,4 +43,31 @@ func Printf(format string, args ...string) {
 // fmt.Fprintf(util.Stderr, format, args)
 func Eprintf(format string, args ...string) {
 	fmt.Fprintf(Stderr, format, args)
+}
+
+// PrintYaml prints the object to yaml to Stdout
+func PrintYaml(obj interface{}) {
+	bytes, err := yaml.Marshal(storageNodes)
+	if err != nil {
+		Eprintf("Unable to create yaml output")
+		return
+	}
+	Printf(string(bytes))
+}
+
+// PrintJson prints the object to json to Stdout
+func PrintJson(obj interface{}) {
+	bytes, err := json.MarshalIndent(storageNodes, "", "  ")
+	if err != nil {
+		Eprintf("Unable to create json output")
+		return
+	}
+	Printf(string(bytes))
+}
+
+// NewTabby is used to return a tabbing object set to the
+// value of Stdout in the util package
+func NewTabby() *tabby.Tabby {
+	writer := tabwriter.NewWriter(Stdout, 0, 0, 2, ' ', 0)
+	return tabby.NewCustom(writer)
 }
