@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	api "github.com/libopenstorage/openstorage-sdk-clients/sdk/golang"
+	"github.com/portworx/px/pkg/portworx"
 	"github.com/portworx/px/pkg/util"
 
 	"github.com/spf13/cobra"
@@ -35,7 +36,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		statusExec(cmd, args)
+		return statusExec(cmd, args)
 	},
 }
 
@@ -54,7 +55,7 @@ func init() {
 }
 
 func statusExec(cmd *cobra.Command, args []string) error {
-	ctx, conn, err := util.PxConnect()
+	ctx, conn, err := portworx.PxConnect(GetConfigFile())
 	if err != nil {
 		return err
 	}
@@ -78,7 +79,7 @@ func statusExec(cmd *cobra.Command, args []string) error {
 		return util.PxErrorMessage(err, "Failed to inspect cluster")
 	}
 
-	fmt.Printf("Cluster ID: %s\n"+
+	util.Printf("Cluster ID: %s\n"+
 		"Cluster UUID: %s\n"+
 		"Cluster Status: %s\n"+
 		"Version: %s\n"+
@@ -104,7 +105,7 @@ func statusExec(cmd *cobra.Command, args []string) error {
 	for _, nid := range nodesInfo.GetNodeIds() {
 		node, err := nodes.Inspect(ctx, &api.SdkNodeInspectRequest{NodeId: nid})
 		if err != nil {
-			return util.PxErrorMessage(err, "Failed to get information about node %s", nid)
+			return util.PxErrorMessagef(err, "Failed to get information about node %s", nid)
 		}
 		n := node.GetNode()
 
@@ -122,4 +123,6 @@ func statusExec(cmd *cobra.Command, args []string) error {
 		t.AddLine(n.GetHostname(), n.GetMgmtIp(), n.GetSchedulerNodeName(), usedStr, capacityStr, n.GetStatus())
 	}
 	t.Print()
+
+	return nil
 }

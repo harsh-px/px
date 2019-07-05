@@ -35,19 +35,19 @@ var (
 
 // Printf is just like fmt.Printf except that it send the output to Stdout. It
 // is equal to fmt.Fprintf(util.Stdout, format, args)
-func Printf(format string, args ...string) {
+func Printf(format string, args ...interface{}) {
 	fmt.Fprintf(Stdout, format, args)
 }
 
 // Eprintf prints the errors to the output buffer Stderr. It is equal to
 // fmt.Fprintf(util.Stderr, format, args)
-func Eprintf(format string, args ...string) {
+func Eprintf(format string, args ...interface{}) {
 	fmt.Fprintf(Stderr, format, args)
 }
 
 // PrintYaml prints the object to yaml to Stdout
 func PrintYaml(obj interface{}) {
-	bytes, err := yaml.Marshal(storageNodes)
+	bytes, err := yaml.Marshal(obj)
 	if err != nil {
 		Eprintf("Unable to create yaml output")
 		return
@@ -57,7 +57,7 @@ func PrintYaml(obj interface{}) {
 
 // PrintJson prints the object to json to Stdout
 func PrintJson(obj interface{}) {
-	bytes, err := json.MarshalIndent(storageNodes, "", "  ")
+	bytes, err := json.MarshalIndent(obj, "", "  ")
 	if err != nil {
 		Eprintf("Unable to create json output")
 		return

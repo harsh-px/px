@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	api "github.com/libopenstorage/openstorage-sdk-clients/sdk/golang"
+	"github.com/portworx/px/pkg/portworx"
 	"github.com/portworx/px/pkg/util"
 
 	"github.com/spf13/cobra"
@@ -49,7 +50,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		createVolumeExec(cmd, args)
+		return createVolumeExec(cmd, args)
 	},
 }
 
@@ -64,7 +65,7 @@ func init() {
 }
 
 func createVolumeExec(cmd *cobra.Command, args []string) error {
-	ctx, conn, err := util.PxConnect()
+	ctx, conn, err := portworx.PxConnect(GetConfigFile())
 	if err != nil {
 		return err
 	}
@@ -73,7 +74,7 @@ func createVolumeExec(cmd *cobra.Command, args []string) error {
 	// Get labels
 	if len(cvOpts.labelsAsString) != 0 {
 		var err error
-		cvOpts.req.Labels, err = commaKVStringToMap(cvOpts.labelsAsString)
+		cvOpts.req.Labels, err = util.CommaStringToStringMap(cvOpts.labelsAsString)
 		if err != nil {
 			return fmt.Errorf("Failed to parse labels: %v\n", err)
 		}
@@ -93,4 +94,6 @@ func createVolumeExec(cmd *cobra.Command, args []string) error {
 	util.Printf("Volume %s created with id %s\n",
 		cvOpts.req.GetName(),
 		resp.GetVolumeId())
+
+	return nil
 }

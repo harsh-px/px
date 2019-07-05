@@ -33,7 +33,7 @@ func ListContains(list []string, s string) bool {
 // ListsHaveMatch returns true when any one string is found in both lists
 func ListHaveMatch(list, match []string) bool {
 	for _, s := range match {
-		if listContains(list, s) {
+		if ListContains(list, s) {
 			return true
 		}
 	}

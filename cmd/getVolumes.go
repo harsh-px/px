@@ -20,6 +20,8 @@ import (
 	"strings"
 
 	api "github.com/libopenstorage/openstorage-sdk-clients/sdk/golang"
+	"github.com/portworx/px/pkg/kubernetes"
+	"github.com/portworx/px/pkg/portworx"
 	"github.com/portworx/px/pkg/util"
 
 	"google.golang.org/grpc"
@@ -42,7 +44,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		getVolumesExec(cmd, args)
+		return getVolumesExec(cmd, args)
 	},
 }
 
@@ -66,7 +68,7 @@ func init() {
 }
 
 func getVolumesExec(cmd *cobra.Command, args []string) error {
-	ctx, conn, err := util.PxConnect()
+	ctx, conn, err := portworx.PxConnect(GetConfigFile())
 	if err != nil {
 		return err
 	}
@@ -76,7 +78,7 @@ func getVolumesExec(cmd *cobra.Command, args []string) error {
 	var pods []v1.Pod
 	showK8s, _ := cmd.Flags().GetBool("show-k8s-info")
 	if showK8s {
-		kc, err := util.KubeConnect()
+		kc, err := kubernetes.KubeConnect(GetConfigFile())
 		if err != nil {
 			return err
 		}
@@ -118,10 +120,10 @@ func getVolumesExec(cmd *cobra.Command, args []string) error {
 	switch output {
 	case "yaml":
 		util.PrintYaml(vols)
-		return
+		return nil
 	case "json":
 		util.PrintJson(vols)
-		return
+		return nil
 	}
 
 	// Determine if it is a wide output
@@ -146,6 +148,8 @@ func getVolumesExec(cmd *cobra.Command, args []string) error {
 		t.AddLine(np.getLine(n)...)
 	}
 	t.Print()
+
+	return nil
 }
 
 type volumeColumnFormatter struct {
@@ -230,7 +234,7 @@ func (p *volumeColumnFormatter) getLine(resp *api.SdkVolumeInspectResponse) []in
 		line = append(line, p.podsUsingVolume(v))
 	}
 	if p.showLabels {
-		line = append(line, labelsToString(v.GetLocator().GetVolumeLabels()))
+		line = append(line, util.StringMapToCommaString(v.GetLocator().GetVolumeLabels()))
 	}
 	return line
 }

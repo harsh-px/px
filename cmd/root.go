@@ -16,14 +16,12 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"path"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/portworx/px/pkg/util"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 const (
@@ -86,10 +84,7 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
+	if len(cfgFile) == 0 {
 		// Find home directory.
 		home, err := homedir.Dir()
 		if err != nil {
@@ -97,16 +92,10 @@ func initConfig() {
 			os.Exit(1)
 		}
 
-		// Search config in home directory with name ".px" (without extension).
-		viper.AddConfigPath(path.Join(home, pxDefaultDir))
-		viper.SetConfigName(pxDefaultConfigName)
 		cfgFile = path.Join(home, pxDefaultDir, pxDefaultConfigName)
 	}
+}
 
-	viper.AutomaticEnv() // read in environment variables that match
-
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		util.Println("Using config file:", viper.ConfigFileUsed())
-	}
+func GetConfigFile() string {
+	return cfgFile
 }

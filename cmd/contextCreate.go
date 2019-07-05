@@ -83,7 +83,7 @@ func contextCreateExec(cmd *cobra.Command, args []string) error {
 		// TODO: Should check if the file exists
 		data, err := ioutil.ReadFile(s)
 		if err != nil {
-			return Errorf("Unable to read CA file %s", s)
+			return fmt.Errorf("Unable to read CA file %s", s)
 		}
 		c.TlsData.Cacert = string(data)
 	}
@@ -94,4 +94,6 @@ func contextCreateExec(cmd *cobra.Command, args []string) error {
 	}
 
 	util.Printf("New context saved to %s\n", cfgFile)
+
+	return nil
 }

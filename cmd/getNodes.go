@@ -16,17 +16,13 @@ limitations under the License.
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 
 	api "github.com/libopenstorage/openstorage-sdk-clients/sdk/golang"
+	"github.com/portworx/px/pkg/portworx"
 	"github.com/portworx/px/pkg/util"
 
-	"github.com/cheynewallace/tabby"
-
 	"github.com/spf13/cobra"
-	yaml "gopkg.in/yaml.v2"
 )
 
 // getNodesCmd represents the getNodes command
@@ -41,7 +37,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		getNodesExec(cmd, args)
+		return getNodesExec(cmd, args)
 	},
 }
 
@@ -50,7 +46,7 @@ func init() {
 }
 
 func getNodesExec(cmd *cobra.Command, args []string) error {
-	ctx, conn, err := util.PxConnect()
+	ctx, conn, err := portworx.PxConnect(GetConfigFile())
 	if err != nil {
 		return err
 	}
@@ -69,7 +65,7 @@ func getNodesExec(cmd *cobra.Command, args []string) error {
 		node, err := nodes.Inspect(ctx, &api.SdkNodeInspectRequest{NodeId: nid})
 		if err != nil {
 			// Just print it and continue to other nodes
-			util.Eprintf("%v\n", util.PxErrorMessagef(err, "Failed to get information about node %s", nid))
+			util.PrintPxErrorMessagef(err, "Failed to get information about node %s", nid)
 			continue
 		}
 		n := node.GetNode()
@@ -101,6 +97,8 @@ func getNodesExec(cmd *cobra.Command, args []string) error {
 	default:
 		getNodesDefaultPrinter(cmd, args, storageNodes)
 	}
+
+	return nil
 }
 
 func getNodesDefaultPrinter(cmd *cobra.Command, args []string, storageNodes []*api.StorageNode) {
@@ -171,7 +169,7 @@ func (p *nodeColumnFormatter) getLine(n *api.StorageNode) []interface{} {
 		}
 	}
 	if p.showLabels {
-		line = append(line, labelsToString(n.GetNodeLabels()))
+		line = append(line, util.StringMapToCommaString(n.GetNodeLabels()))
 	}
 	return line
 }
