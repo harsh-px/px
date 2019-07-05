@@ -36,13 +36,13 @@ var (
 // Printf is just like fmt.Printf except that it send the output to Stdout. It
 // is equal to fmt.Fprintf(util.Stdout, format, args)
 func Printf(format string, args ...interface{}) {
-	fmt.Fprintf(Stdout, format, args)
+	fmt.Fprintf(Stdout, format, args...)
 }
 
 // Eprintf prints the errors to the output buffer Stderr. It is equal to
 // fmt.Fprintf(util.Stderr, format, args)
 func Eprintf(format string, args ...interface{}) {
-	fmt.Fprintf(Stderr, format, args)
+	fmt.Fprintf(Stderr, format, args...)
 }
 
 // PrintYaml prints the object to yaml to Stdout
