@@ -41,9 +41,9 @@ to quickly create a Cobra application.`,
 var Version = "0.0.1"
 
 // PluginInfo sets information about the plugin
-var PluginInfo = map[string]string{
+var PluginManifest = map[string]string{
 	"name":    "sample",
-	"version": VERSION,
+	"version": Version,
 }
 
 func PluginInit(parent *cobra.Command) {
