@@ -18,6 +18,7 @@ package cmd
 import (
 	"os"
 	"path"
+	"plugin"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/portworx/px/pkg/util"
@@ -80,6 +81,27 @@ func init() {
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
+	// Load plugins
+	home, _ := homedir.Dir()
+	soPath := path.Join(home, pxDefaultDir, "plugins", "px-plugin-sample.so")
+	p, err := plugin.Open(soPath)
+	if err != nil {
+		util.Eprintf("Failed to open plugin %s: %v\n", soPath, err)
+	} else {
+		f, err := p.Lookup("PluginInit")
+		if err != nil {
+			util.Eprintf("Plugin ___ does not have init function\n")
+		} else {
+			pinit, ok := f.(func(*cobra.Command))
+			if !ok {
+				util.Eprintf("Plugin ___ failed to initialize\n")
+			} else {
+				pinit(rootCmd)
+			}
+		}
+	}
+	util.Printf("Loaded plugins\n")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -94,6 +116,7 @@ func initConfig() {
 
 		cfgFile = path.Join(home, pxDefaultDir, pxDefaultConfigName)
 	}
+
 }
 
 func GetConfigFile() string {
