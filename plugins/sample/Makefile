@@ -1,5 +1,5 @@
-PLUGINNAME=px-sample
-PLUGIN=$(PLUGINNAME).so
+PLUGINNAME=sample
+PLUGIN=$(PLUGINNAME).px
 
 all: $(PLUGIN)
 

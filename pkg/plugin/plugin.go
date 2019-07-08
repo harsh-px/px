@@ -15,6 +15,18 @@ limitations under the License.
 */
 package plugin
 
+import (
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path"
+	"path/filepath"
+	"plugin"
+
+	"github.com/portworx/px/pkg/util"
+	"github.com/spf13/cobra"
+)
+
 type PluginManifest struct {
 	Name    string
 	Version string
@@ -41,75 +53,95 @@ func NewPluginManager(config *PluginManagerConfig) *PluginManager {
 	}
 }
 
-func (p *PluginManager) load() error {
+func (pm *PluginManager) Load() {
 
-	for _, pluginDir := range p.config.PluginDirs {
+	for _, pluginDir := range pm.config.PluginDirs {
 		files, err := ioutil.ReadDir(pluginDir)
 		if err != nil {
 			continue
 		}
 
 		for _, file := range files {
-			if filepath.Ext(file) == pluginExt {
-				manifest, err := p.loadPlugin(file)
+			if filepath.Ext(file.Name()) == pluginExt {
+				manifest, err := pm.loadPlugin(path.Join(pluginDir, file.Name()))
 				if err != nil {
 					util.Eprintf("%v\n", err)
 					continue
 				}
-				p.plugins = append(p.plugins, manifest)
+				pm.plugins = append(pm.plugins, manifest)
 			}
 		}
 	}
 }
 
-func (p *PluginManager) List() ([]Plugin, error) {
-
+func (pm *PluginManager) List() []*PluginManifest {
+	return pm.plugins
 }
 
-func (p *PluginManager) loadPlugin(soPath string) (*PluginManifest, error) {
+func (pm *PluginManager) loadPlugin(soPath string) (*PluginManifest, error) {
 	// Open plugin library
 	p, err := plugin.Open(soPath)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to open plugin %s: %v\n", soPath, err)
 	}
 
+	manifest, err := pm.getManifest(p, soPath)
+	if err != nil {
+		return nil, err
+	}
+
+	err = pm.registerPlugin(p, soPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return manifest, nil
+}
+
+func (pm *PluginManager) getManifest(p *plugin.Plugin, soPath string) (*PluginManifest, error) {
 	// Get Plugin Manifest to get name and info
 	m, err := p.Lookup("PluginManifest")
 	if err != nil {
-		return nil, fmt.Errorf("Plugin ___ does not have init function\n")
+		return nil, fmt.Errorf("Plugin %s does not have init function", soPath)
 	}
 
 	// Confirm the interface is correct
-	manifestMap, ok := *m.(*map[string]string)
+	mmap, ok := m.(*map[string]string)
 	if !ok {
 		return nil, fmt.Errorf("Plugin %s failed to get manifest", soPath)
 	}
+	manifestMap := *mmap
+
+	// Populate the manifest
 	manifest := &PluginManifest{}
 	if name, ok := manifestMap["name"]; !ok {
 		return nil, fmt.Errorf("%s plugin is missing a required name", soPath)
 	} else {
 		manifest.Name = name
 	}
-	if name, ok := manifestMap["version"]; !ok {
+	if version, ok := manifestMap["version"]; !ok {
 		return nil, fmt.Errorf("%s plugin is missing a required version", soPath)
 	} else {
-		manifest.Name = version
+		manifest.Version = version
 	}
 
+	return manifest, nil
+}
+
+func (pm *PluginManager) registerPlugin(p *plugin.Plugin, soPath string) error {
 	// Get access to plugin init function
 	f, err := p.Lookup("PluginInit")
 	if err != nil {
-		return nil, fmt.Errorf("Plugin %s does not have init function", soPath)
+		return fmt.Errorf("Plugin %s does not have init function", soPath)
 	}
 
 	// Confirm the interface is correct
-	pinit, ok := f.(func(*cobra.Command))
+	pinit, ok := f.(func(*cobra.Command, *os.File, *os.File))
 	if !ok {
-		return nil, fmt.Errorf("Plugin %s does not have the correct init function", soPath)
+		return fmt.Errorf("Plugin %s does not have the correct init function", soPath)
 	}
 
 	// Finally, register the handler
-	pinit(rootCmd)
-
-	return manifest, nil
+	pinit(pm.config.RootCmd, util.Stdout, util.Stderr)
+	return nil
 }

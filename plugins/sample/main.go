@@ -16,9 +16,14 @@ limitations under the License.
 package main
 
 import (
-	"fmt"
+	"os"
 
+	"github.com/portworx/px/pkg/util"
 	"github.com/spf13/cobra"
+)
+
+var (
+	argExample string
 )
 
 // sampleCmd represents the get command
@@ -32,7 +37,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("get called")
+		util.Printf("Got called with example = [%s]\n", argExample)
 		return nil
 	},
 }
@@ -46,7 +51,10 @@ var PluginManifest = map[string]string{
 	"version": Version,
 }
 
-func PluginInit(parent *cobra.Command) {
+func PluginInit(parent *cobra.Command, Stdout, Stderr *os.File) {
+	util.Stdout = Stdout
+	util.Stderr = Stderr
+
 	parent.AddCommand(sampleCmd)
-	sampleCmd.Flags().String("sample", "", "Help message for toggle")
+	sampleCmd.Flags().StringVar(&argExample, "example", "", "Help message for sample")
 }
